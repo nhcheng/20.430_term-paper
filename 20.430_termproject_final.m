@@ -29,14 +29,33 @@ clc
 clear
 close all
 c_hist = logspace(-1,3,9);
+subplot(2,2,1)
 for i = 1:length(c_hist)
 c = c_hist(i);
 flow(c,length(c_hist),i)
 hold on
 end
 xline(0.7,'--k','LineWidth',2.5,'DisplayName','20% MFI');
-
+subplot(2,2,2)
+[X1,map1]=imread('Figure3A_original.png');
+imshow(X1,map1)
 %% Figure 4
+clc
+clear
+close all
+lam_hist = linspace(4,28,7); 
+lam_hist = [0.004,0.01,0.03,0.09,0.2,0.6,1]
+subplot(2,2,1)
+for i = 1:length(lam_hist)
+c = 2*fliplr(lam_hist(i))^(-1/2);
+flow_c(c,length(lam_hist),i,lam_hist)
+hold on
+end
+xline(0.7,'--k','LineWidth',2.5,'DisplayName','20% MFI');
+subplot(2,2,2)
+[X1,map1]=imread('Figure3C_original.png');
+imshow(X1,map1)
+%%
 clc
 clear
 close all
@@ -44,7 +63,7 @@ lam_hist = linspace(4,28,7);
 lam_hist = [0.004,0.01,0.03,0.09,0.2,0.6,1]
 for i = 1:length(lam_hist)
 c = 2*fliplr(lam_hist(i))^(-1/2);
-flow_c(c,length(lam_hist),i,lam_hist)
+flow_c_notnormalized(c,length(lam_hist),i,lam_hist)
 hold on
 end
 xline(0.7,'--k','LineWidth',2.5,'DisplayName','20% MFI');
@@ -54,8 +73,12 @@ syms x
 y = 2*x^(-1/2)
 fplot(y,'LineWidth',2)
 hold on
+xp = [0.004,0.01,0.03,0.09,0.2,0.6,1]
+hold on
 y = 3.8*x^(-1/2)
 fplot(y,'LineWidth',2)
+yp = 2*xp.^(-1/2)
+plot(xp,yp,'o','LineWidth',2.5)
 set(gca, 'xscale','log')
 set(gca, 'yscale','log')
 xlim([1e-2 1])
@@ -64,8 +87,8 @@ grid on
 hold on
 xlabel('IL-2R\alpha^+ density per 10^3\mum^3')
 ylabel('\lambda_{diameter}')
-legend('Simplified model','Oyler-Yaniv et al.')
-title('Scaling relationship of simplified model and Oyler-Yaniv et al.')
+legend('Simplified model','Oyler-Yaniv et al.','IL-2R\alpha^+ density in Figure 3C')
+%title('Scaling relationship of simplified model and Oyler-Yaniv et al.')
 
 %%
 function flow(c,l,i)
@@ -86,7 +109,7 @@ xlabel('pSTAT5 (a.u.)')
 ylabel('% of Max')
 legend('Location','northeastoutside')
 grid on
-title('Model of pSTAT5 response of CD4^+IL-2R\alpha^+ consuming cells to [IL-2]=10^\alpha')
+%title('Model of pSTAT5 response of CD4^+IL-2R\alpha^+ consuming cells to [IL-2]=10^\alpha')
 end
 
 function flow_c(lambda,l,i,lam_hist)
@@ -112,7 +135,33 @@ xlabel('pSTAT5 (a.u.)')
 ylabel('% of Max')
 legend('Location','northeastoutside')
 grid on
-title('Distribution of pSTAT5 in CD4^+IL-2R\alpha^+ in clusterwell with varying IL-2R\alpha^+ density')
+%title('Distribution of pSTAT5 in CD4^+IL-2R\alpha^+ in clusterwell with varying IL-2R\alpha^+ density')
+end
+
+function flow_c_notnormalized(lambda,l,i,lam_hist)
+% 2mm length = 2000 micrometer = 200 cell diameters
+% Cell: 10 micrometer
+color = autumn(l);
+syms x
+%y = linspace(1,200,1e8);
+y = linspace(1,200,10000000);
+c = 200*exp(-1/lambda*x); %200pm
+%c = 400*(lambda/x)^2
+f = 4/(1+6.5/c);
+ff = matlabFunction(f);
+res = (ff(y))+0.1; %background
+res = abs(randn(1,length(res)).*res);
+[N,edges] = histcounts(log10(res));
+[N,edges]  = histcounts(res,10.^edges);
+plot(conv(edges, [0 1], 'valid'),N,'DisplayName',strcat(['[IL-2R\alpha^+] = ',' '...
+    ,num2str(lam_hist(i))]),'LineWidth',2.5,'color',color(i,:))
+set(gca, 'xscale','log')
+xlim([0.01 20])
+xlabel('pSTAT5 (a.u.)')
+ylabel('% of Max')
+legend('Location','northeastoutside')
+grid on
+%title('Distribution of pSTAT5 in CD4^+IL-2R\alpha^+ in clusterwell with varying IL-2R\alpha^+ density')
 end
 
 function analy(lambda,l,i)
@@ -131,8 +180,8 @@ hold on
 xlim([-0.01 4/(1+6.5/200)])
 ylim([0 1])
 ylabel('Probability density')
-xlabel('Mean fluorescence intensity (MFI)')
-title('Probability distribution of pSTAT5 MFI in CD4^+IL-2R\alpha^+ in clusterwell with varying \lambda_{diameter}')
+xlabel('pSTAT5 (a.u.)')
+%title('Probability distribution of pSTAT5 MFI in CD4^+IL-2R\alpha^+ in clusterwell with varying \lambda_{diameter}')
 legend('Location','northeastoutside')
 end
 
@@ -153,7 +202,7 @@ xlim([0 200])
 grid on 
 hold on
 xlabel('Distance (Cell diameters)')
-ylabel('Mean fluorescence intensity (MFI)')
-title('Spatial variation of pSTAT5 MFI in CD4^+IL-2R\alpha^+ in clusterwell with varying \lambda_{diameter}')
+ylabel('pSTAT5 (a.u.)')
+%title('Spatial variation of pSTAT5 MFI in CD4^+IL-2R\alpha^+ in clusterwell with varying \lambda_{diameter}')
 legend('Location','northeastoutside')
 end
